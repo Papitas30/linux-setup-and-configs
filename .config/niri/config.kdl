@@ -1,0 +1,211 @@
+recent-windows {
+    // off
+    debounce-ms 750
+
+    open-delay-ms 120
+
+    highlight {
+        active-color "#999999ff"
+        urgent-color "#ff9999ff"
+        padding 0
+        corner-radius 0
+    }
+
+    previews {
+       
+        max-scale 1
+    }
+
+    binds {
+        Alt+Tab         { next-window; }
+
+        Alt+grave       { previous-window; }
+    }
+}
+input {
+
+    keyboard {
+     
+       
+        numlock
+    }
+
+    touchpad {
+     
+        tap
+   
+        natural-scroll
+    }
+
+    mouse 
+
+
+    trackpoint 
+}
+
+layout {
+
+    background-color "transparent"
+
+    preset-column-widths {
+      proportion 0.25
+ proportion 0.5
+ proportion 0.75
+    }
+
+     preset-window-heights {
+        proportion 0.5
+        proportion 1.0
+    }
+   
+    shadow {
+        // Uncomment the next line to enable shadows.
+         on
+      
+
+        softness 30
+
+        spread 5
+        offset x=0 y=5
+
+    }
+}
+
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+
+
+window-rule {
+    min-width 480
+    max-width 1920
+    tiled-state true
+}
+gestures {
+    dnd-edge-view-scroll {
+       
+        delay-ms 0
+        max-speed 4000
+    }
+
+    dnd-edge-workspace-switch {
+        trigger-height 10
+        delay-ms 0
+    }
+}
+// Set the regular wallpaper on the backdrop.
+layer-rule {
+  match namespace="^noctalia-wallpaper*"
+  place-within-backdrop true
+}
+
+overview {
+  workspace-shadow {
+    off
+    }
+}
+environment {
+  QT_QPA_PLATFORMTHEME "qt6ct"
+}
+debug {
+    deactivate-unfocused-windows
+}
+// Enable blur behind the foot terminal.
+window-rule {
+    match app-id="^foot$"
+
+    background-effect {
+        blur true
+    }
+}
+
+// Enable blur behind the fuzzel launcher.
+layer-rule {
+    match namespace="^launcher$"
+
+    background-effect {
+        blur true
+    }
+}
+// These are the default values:
+blur {
+
+    //off
+    passes 2
+    offset 1
+    noise 0
+    saturation 1.4
+}
+animations {
+    workspace-switch {
+        spring damping-ratio=0.9 stiffness=800 epsilon=0.0001
+    }
+
+    horizontal-view-movement {
+        spring damping-ratio=0.9 stiffness=800 epsilon=0.0001
+    }
+
+    window-open {
+        duration-ms 200
+        curve "linear"
+
+        custom-shader r"
+          vec4 open_color(vec3 coords_geo, vec3 size_geo) {
+            float p0 = niri_clamped_progress;
+            float p  = smoothstep(0.0, 1.0, p0);
+
+            vec2 size   = size_geo.xy;
+            vec2 center = size * 0.5;
+            vec2 pos    = coords_geo.xy * size;
+
+            float scale = mix(0.01, 1.0, p);
+
+            vec2 scaled_pos = (pos - center) / scale + center;
+            vec2 uv = scaled_pos / size;
+
+            if (uv.x < 0.0 || uv.x > 1.0 ||
+                uv.y < 0.0 || uv.y > 1.0) {
+                return vec4(0.0, 0.0, 0.0, 0.0);
+            }
+
+            return texture2D(niri_tex, uv);
+          }
+        "
+    }
+
+    window-close {
+        duration-ms 200
+        curve "linear"
+
+        custom-shader r"
+          vec4 close_color(vec3 coords_geo, vec3 size_geo) {
+            float p0 = niri_clamped_progress;
+            float p  = smoothstep(0.0, 1.0, p0);
+
+            vec2 size   = size_geo.xy;
+            vec2 center = size * 0.5;
+            vec2 pos    = coords_geo.xy * size;
+
+            float scale = mix(1.0, 0.01, p);
+
+            vec2 scaled_pos = (pos - center) / scale + center;
+            vec2 uv = scaled_pos / size;
+
+            if (uv.x < 0.0 || uv.x > 1.0 ||
+                uv.y < 0.0 || uv.y > 1.0) {
+                return vec4(0.0, 0.0, 0.0, 0.0);
+            }
+
+            return texture2D(niri_tex, uv);
+          }
+        "
+    }
+}
+
+include "basicsettings.kdl" // Added by niri-settings
+include "keybinds.kdl" // Added by niri-settings
+spawn-at-startup "noctalia"
+spawn-sh-at-startup "sleep 5 && easyeffects --service-mode -w"
+spawn-sh-at-startup "sleep 5 && discord --start-minimized"
+include "./noctalia.kdl"
+

@@ -1,0 +1,72 @@
+binds {
+    
+    
+    
+    
+    //Hotkey
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    //Audio,Mute,Play controls
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-up" "2"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-down" "2"; }
+   
+    Mod+Period allow-when-locked=true repeat=false hotkey-overlay-title="Mute" { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ $(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | awk '{print ($2<0.02?0.95:0.01)}')"; }
+    XF86AudioMute allow-when-locked=true repeat=false { spawn "noctalia" "msg" "volume-mute"; }
+    XF86AudioPlay allow-when-locked=true { spawn "noctalia" "msg" "media" "toggle"; }
+    XF86AudioStop allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "stop"; }
+    XF86AudioPrev allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "previous"; }
+    XF86AudioNext allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "next"; }
+
+    //Brightness
+    XF86MonBrightnessUp allow-when-locked=true { spawn "noctalia" "msg" "brightness-up" "5"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "noctalia" "msg" "brightness-down" "5"; }
+
+    //Move
+    Mod+Up    { move-window-up; }
+    Mod+Down  { move-window-down; }
+    Mod+Left hotkey-overlay-title=null { consume-or-expel-window-left; }
+    Mod+Right hotkey-overlay-title=null { consume-or-expel-window-right; }
+    
+    Mod+Ctrl+Up    { move-window-up; }
+    Mod+Ctrl+Down  { move-window-down; }
+    Mod+Ctrl+Left hotkey-overlay-title=null { move-column-left; }
+    Mod+Ctrl+Right hotkey-overlay-title=null { move-column-right; }
+    
+    //Focus
+    Mod+W { focus-window-up; }
+    Mod+S { focus-window-down; }
+    Mod+A hotkey-overlay-title=null { focus-column-left; }
+    Mod+D hotkey-overlay-title=null { focus-column-right; }
+    
+    //Close
+    Mod+Q repeat=false { close-window; }
+
+    //Width,Height
+    Mod+R       { switch-preset-column-width; }
+    Mod+Ctrl+R  { switch-preset-window-height; }
+    
+    //Fullscreen
+    Mod+F       { maximize-window-to-edges; }
+    Mod+Ctrl+F  { fullscreen-window; }
+
+    //Scrollwheel
+    Mod+Shift+WheelScrollDown      { focus-column-right; }
+    Mod+Shift+WheelScrollUp        { focus-column-left; }
+    Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }
+    Mod+Ctrl+Shift+WheelScrollUp   { move-column-left; }
+
+    //Custom Keys
+    Mod+Comma repeat=false hotkey-overlay-title="Open Settings" { spawn "noctalia" "msg" "settings-toggle"; }
+    Mod+V repeat=false hotkey-overlay-title="Open Clipboard" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
+    Mod+T repeat=false hotkey-overlay-title="Open Terminal" { spawn "foot"; }
+    Super+F1 repeat=false hotkey-overlay-title="Open LibreWolf" { spawn "/usr/share/librewolf/librewolf"; }
+    Super+F2 repeat=false hotkey-overlay-title="Open Thunar" { spawn "thunar"; }
+    Mod+Tab repeat=false hotkey-overlay-title="Open Launcher" { spawn-sh "pkill fuzzel || fuzzel"; }
+    Mod+Ctrl+Z repeat=false hotkey-overlay-title="Open Emojis" { spawn-sh "qs -c noctalia-shell ipc call launcher emoji"; }
+
+
+ 
+    Print { screenshot; }
+    Ctrl+Print { screenshot-screen; }
+    Mod+Delete allow-when-locked=true repeat=false { spawn "noctalia" "msg" "panel-toggle" "session"; }
+}

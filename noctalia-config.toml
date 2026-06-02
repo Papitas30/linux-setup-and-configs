@@ -1,0 +1,247 @@
+[audio]
+enable_sounds = true
+
+[bar.default]
+background_opacity = 0.27000000000000002
+capsule = true
+capsule_border = "shadow"
+capsule_fill = "surface"
+capsule_groups = [ "Monitor", "Other" ]
+capsule_padding = 8.0
+capsule_radius = 0.0
+center = [ "taskbar" ]
+end = [ "notifications", "input_volume", "1", "volume", "brightness", "battery", "tray", "session" ]
+margin_edge = 0.0
+margin_ends = 0.0
+padding = 8
+panel_overlap = 0.0
+radius = 0
+shadow = false
+start = [ "clock", "cpu", "ram", "temp", "active_window" ]
+thickness = 31
+widget_spacing = 4
+
+[brightness]
+enable_ddcutil = true
+
+[[control_center.shortcuts]]
+type = "wifi"
+
+[[control_center.shortcuts]]
+type = "bluetooth"
+
+[[control_center.shortcuts]]
+type = "notification"
+
+[[control_center.shortcuts]]
+type = "power_profile"
+
+[desktop_widgets]
+enabled = false
+schema_version = 1
+widget_order = []
+
+    [desktop_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [desktop_widgets.widget]
+
+[dock]
+auto_hide = true
+background_opacity = 0.99999997764825821
+enabled = true
+icon_size = 50
+inactive_opacity = 1.0
+inactive_scale = 1.0
+item_spacing = 2
+launcher_icon = "home"
+launcher_position = "start"
+margin_edge = 0
+padding = 4
+pinned = [ "librewolf", "org.vinegarhq.Sober", "thunar" ]
+radius = 0
+show_dots = true
+show_instance_count = false
+
+[idle]
+behavior_order = [ "screen-off", "suspend", "lock" ]
+
+    [idle.behavior.lock]
+    action = "lock"
+    enabled = false
+    timeout = 600
+
+    [idle.behavior.screen-off]
+    action = "screen_off"
+    enabled = true
+    timeout = 360
+
+    [idle.behavior.suspend]
+    action = "suspend"
+    enabled = true
+    lock_before_suspend = false
+    timeout = 600
+
+[nightlight]
+enabled = true
+force = true
+temperature_day = 10000
+temperature_night = 5700
+use_weather_location = false
+
+[notification]
+background_opacity = 0.84999998100101948
+
+[osd]
+background_opacity = 0.80000000000000004
+keyboard_layout = false
+lock_keys = false
+offset_y = 12.0
+position = "bottom_center"
+scale = 1.05
+
+[shell]
+clipboard_auto_paste = "ctrl_v"
+clipboard_history_max_entries = 100.0
+corner_radius_scale = 0.0
+date_format = "%A, %b %d"
+font_family = "Noto Sans Mono"
+launch_apps_as_systemd_services = true
+polkit_agent = true
+settings_show_advanced = true
+telemetry_enabled = true
+time_format = "%I:%M %p"
+
+    [shell.panel]
+    clipboard_placement = "attached"
+    open_near_click_control_center = true
+    open_near_click_wallpaper = true
+    transparency_mode = "soft"
+
+    [shell.screenshot]
+    copy_to_clipboard = true
+    freeze_screen = true
+
+    [[shell.session.actions]]
+    action = "shutdown"
+    enabled = true
+    shortcut = "1"
+    variant = "destructive"
+
+    [[shell.session.actions]]
+    action = "reboot"
+    enabled = true
+    shortcut = "2"
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "suspend"
+    enabled = true
+    shortcut = "3"
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "logout"
+    enabled = true
+    shortcut = "4"
+    variant = "default"
+
+    [[shell.session.actions]]
+    action = "lock"
+    enabled = false
+    shortcut = "1"
+    variant = "default"
+
+[theme]
+builtin = "Catppuccin"
+community_palette = "One"
+source = "community"
+
+    [theme.templates]
+    builtin_ids = [ "foot", "gtk3", "gtk4", "kcolorscheme", "niri", "qt" ]
+    community_ids = [ "fuzzel", "discord" ]
+
+[wallpaper]
+directory = "/home/diego/Pictures/Wallpapers"
+edge_smoothness = 0.0
+transition = [ "fade" ]
+transition_duration = 100
+
+    [wallpaper.default]
+    path = "/home/diego/Pictures/Wallpapers/wallhaven_1j3x1g.jpg"
+
+    [wallpaper.last]
+    path = "/home/diego/Pictures/Wallpapers/wallhaven_1j3x1g.jpg"
+
+    [wallpaper.monitors.eDP-1]
+    path = "/home/diego/Pictures/Wallpapers/wallhaven_1j3x1g.jpg"
+
+[weather]
+address = "Katy, Texas"
+refresh_minutes = 240
+unit = "imperial"
+
+[widget.1]
+capsule = true
+capsule_group = "Other"
+length = 10.0
+type = "spacer"
+
+[widget.active_window]
+icon_size = 16.0
+max_length = 250.0
+title_scroll = "on_hover"
+
+[widget.battery]
+capsule = true
+warning_threshold = 15
+
+[widget.brightness]
+capsule = true
+
+[widget.clock]
+format = "%I:%M %p | %a %b %d"
+
+[widget.cpu]
+capsule = true
+capsule_group = "Monitor"
+display = "text"
+label_min_width = 26.0
+
+[widget.input_volume]
+capsule = true
+capsule_group = "Other"
+
+[widget.notifications]
+capsule = true
+
+[widget.ram]
+capsule = true
+capsule_group = "Monitor"
+display = "text"
+label_min_width = 27.0
+stat = "ram_pct"
+
+[widget.session]
+capsule = true
+
+[widget.taskbar]
+anchor = true
+
+[widget.temp]
+capsule = true
+capsule_group = "Monitor"
+display = "text"
+label_min_width = 27.0
+
+[widget.tray]
+capsule = true
+drawer = true
+drawer_columns = 4
+pinned = [ "Discord", "easyeffects" ]
+
+[widget.volume]
+capsule = true
+capsule_group = "Other"
