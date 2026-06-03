@@ -17,7 +17,7 @@ alias sdi='sudo dnf install'
 alias sdu='sudo dnf update'
 alias sdr='sudo dnf remove'
 alias nano='micro'
-alias reboot='systemctl reboot -i'
+
 HISTFILESIZE=200  
 HISTSIZE=200
 HISTCONTROL=ignoredups:erasedups

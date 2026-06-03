@@ -1,0 +1,24 @@
+
+
+.tabbrowser-tab:not([selected]) .tab-close-button {
+	display: none !important;
+}
+
+.tabbrowser-tab:not([pinned]):hover .tab-close-button {
+	display: inline-flex !important;
+}
+
+.titlebar-close {
+    display:none !important;
+}
+.titlebar-spacer {
+    display:none !important;
+}
+
+.private-browsing-indicator-label{display:none !important;}
+.private-browsing-indicator-with-label {
+  margin-inline: 0 7px !important;
+}
+.tabbrowser-tab {
+  --tab-label-mask-size: 0.5em !important;
+}

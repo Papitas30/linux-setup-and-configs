@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+<action>
+	<icon>utilities-terminal</icon>
+	<name>Open Terminal Here</name>
+	<submenu></submenu>
+	<unique-id>1775084237885140-1</unique-id>
+	<command>foot -D %d</command>
+	<description></description>
+	<range></range>
+	<patterns>*</patterns>
+	<startup-notify/>
+	<directories/>
+</action>
+<action>
+	<icon></icon>
+	<name>Open with nano</name>
+	<submenu></submenu>
+	<unique-id>1775860584084965-1</unique-id>
+	<command>foot sudo nano %f</command>
+	<description></description>
+	<range>1</range>
+	<patterns>*</patterns>
+	<startup-notify/>
+	<other-files/>
+	<text-files/>
+</action>
+<action>
+	<icon></icon>
+	<name>Open with root</name>
+	<submenu></submenu>
+	<unique-id>1777941892703710-1</unique-id>
+	<command>gedit admin://%f</command>
+	<description></description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+<action>
+	<icon></icon>
+	<name>Open admin directory</name>
+	<submenu></submenu>
+	<unique-id>1778715159877255-1</unique-id>
+	<command>thunar admin:///%f</command>
+	<description></description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+<action>
+	<icon></icon>
+	<name>symlinks</name>
+	<submenu></submenu>
+	<unique-id>1780437385273640-1</unique-id>
+	<command>for file in ~/.config/%n/*; do ln -s &quot;$file&quot; ~/linux-setup-and-configs/.config/%n/; done</command>
+	<description></description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+<action>
+	<icon></icon>
+	<name>Symlink to Git</name>
+	<submenu></submenu>
+	<unique-id>1780438064983946-1</unique-id>
+	<command>bash -c &apos;first=&quot;%F&quot;; first=&quot;${first%% *}&quot;; rel_path=&quot;${first#$HOME/}&quot;; default_name=$(echo &quot;$rel_path&quot; | cut -d/ -f1); if [ &quot;$default_name&quot; = &quot;.config&quot; ]; then default_name=$(echo &quot;$rel_path&quot; | cut -d/ -f2); fi; pkg_name=$(zenity --entry --title=&quot;Stow Package&quot; --text=&quot;Enter package name:&quot; --entry-text=&quot;$default_name&quot;); [ -z &quot;$pkg_name&quot; ] &amp;&amp; exit; for f in %F; do rel_path=&quot;${f#$HOME/}&quot;; mkdir -p ~/dots/&quot;$pkg_name&quot;/$(dirname &quot;$rel_path&quot;); mv &quot;$f&quot; ~/dots/&quot;$pkg_name&quot;/$(dirname &quot;$rel_path&quot;)/; done; cd ~/dots &amp;&amp; stow -v &quot;$pkg_name&quot;&apos;
+</command>
+	<description></description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+</actions>

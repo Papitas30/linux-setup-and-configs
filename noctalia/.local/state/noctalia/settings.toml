@@ -160,7 +160,7 @@ community_palette = "One"
 source = "community"
 
     [theme.templates]
-    builtin_ids = [ "foot", "gtk3", "gtk4", "kcolorscheme", "niri", "qt" ]
+    builtin_ids = [ "foot", "gtk3", "gtk4", "ghostty", "kcolorscheme", "niri", "qt" ]
     community_ids = [ "fuzzel", "discord" ]
 
 [wallpaper]
