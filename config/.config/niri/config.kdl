@@ -112,13 +112,19 @@ debug {
 }
 // Enable blur behind the foot terminal.
 window-rule {
+    match app-id="^Sober$"
+ open-fullscreen true
+
+    
+}
+
+window-rule {
     match app-id="^foot$"
 
     background-effect {
         blur true
     }
 }
-
 // Enable blur behind the fuzzel launcher.
 layer-rule {
     match namespace="^launcher$"

@@ -1,5 +1,6 @@
 [audio]
 enable_sounds = true
+sound_volume = 0.59999998658895493
 
 [bar.default]
 background_opacity = 0.27000000000000002
@@ -8,33 +9,50 @@ capsule_border = "shadow"
 capsule_fill = "surface"
 capsule_groups = [ "Monitor", "Other" ]
 capsule_padding = 8.0
-capsule_radius = 0.0
-center = [ "taskbar" ]
-end = [ "notifications", "input_volume", "1", "volume", "brightness", "battery", "tray", "session" ]
+center = [ "taskbar", "recorder" ]
+end = [ "notifications", "group:g2", "tray", "session" ]
 margin_edge = 0.0
 margin_ends = 0.0
 padding = 8
 panel_overlap = 0.0
 radius = 0
-shadow = false
-start = [ "clock", "cpu", "ram", "temp", "active_window" ]
-thickness = 31
+start = [ "clock", "group:g1", "active_window" ]
+thickness = 30
 widget_spacing = 4
+
+    [[bar.default.capsule_group]]
+    border = "shadow"
+    fill = "surface"
+    id = "g1"
+    members = [ "cpu", "ram", "temp", "network_rx", "network_tx" ]
+    opacity = 1.0
+    padding = 8.0
+
+    [[bar.default.capsule_group]]
+    border = "shadow"
+    fill = "surface"
+    id = "g2"
+    members = [ "input_volume", "1", "volume", "1", "brightness", "1", "battery" ]
+    opacity = 1.0
+    padding = 8.0
 
 [brightness]
 enable_ddcutil = true
 
-[[control_center.shortcuts]]
-type = "wifi"
+[control_center]
+sidebar_section = "none"
 
-[[control_center.shortcuts]]
-type = "bluetooth"
+    [[control_center.shortcuts]]
+    type = "wifi"
 
-[[control_center.shortcuts]]
-type = "notification"
+    [[control_center.shortcuts]]
+    type = "bluetooth"
 
-[[control_center.shortcuts]]
-type = "power_profile"
+    [[control_center.shortcuts]]
+    type = "notification"
+
+    [[control_center.shortcuts]]
+    type = "power_profile"
 
 [desktop_widgets]
 enabled = false
@@ -52,16 +70,18 @@ widget_order = []
 auto_hide = true
 background_opacity = 0.99999997764825821
 enabled = true
-icon_size = 50
+icon_size = 52
 inactive_opacity = 1.0
 inactive_scale = 1.0
 item_spacing = 2
 launcher_icon = "home"
 launcher_position = "start"
+magnification_scale = 1.25
 margin_edge = 0
 padding = 4
 pinned = [ "librewolf", "org.vinegarhq.Sober", "thunar" ]
 radius = 0
+reserve_space = false
 show_dots = true
 show_instance_count = false
 
@@ -82,7 +102,26 @@ behavior_order = [ "screen-off", "suspend", "lock" ]
     action = "suspend"
     enabled = true
     lock_before_suspend = false
-    timeout = 600
+    timeout = 6000
+
+[lockscreen_widgets]
+enabled = false
+schema_version = 2
+widget_order = [ "lockscreen-login-box@eDP-1" ]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+    box_height = 0.0
+    box_width = 0.0
+    cx = 960.0
+    cy = 957.0
+    output = "eDP-1"
+    rotation = 0.0
+    type = "login_box"
 
 [nightlight]
 enabled = true
@@ -92,23 +131,37 @@ temperature_night = 5700
 use_weather_location = false
 
 [notification]
-background_opacity = 0.84999998100101948
+background_opacity = 0.80000000000000004
 
 [osd]
-background_opacity = 0.80000000000000004
+background_opacity = 0.99999997764825821
 keyboard_layout = false
 lock_keys = false
 offset_y = 12.0
 position = "bottom_center"
 scale = 1.05
 
+    [osd.kinds]
+    caffeine = false
+    dnd = false
+    keyboard_layout = false
+    lock_keys = false
+
+[plugin_settings."noctalia/screen_recorder"]
+frame_rate = 30
+quality = "medium"
+replay_enabled = true
+video_codec = "vp9"
+
+[plugins]
+enabled = [ "noctalia/screen_recorder" ]
+
 [shell]
-clipboard_auto_paste = "ctrl_v"
 clipboard_history_max_entries = 100.0
 corner_radius_scale = 0.0
 date_format = "%A, %b %d"
 font_family = "Noto Sans Mono"
-launch_apps_as_systemd_services = true
+lang = "en"
 polkit_agent = true
 settings_show_advanced = true
 telemetry_enabled = true
@@ -122,7 +175,6 @@ time_format = "%I:%M %p"
 
     [shell.screenshot]
     copy_to_clipboard = true
-    freeze_screen = true
 
     [[shell.session.actions]]
     action = "shutdown"
@@ -154,13 +206,19 @@ time_format = "%I:%M %p"
     shortcut = "1"
     variant = "default"
 
+    [shell.shadow]
+    alpha = 0.63999998569488525
+
+[system.monitor]
+disk_poll_seconds = 7
+
 [theme]
 builtin = "Catppuccin"
 community_palette = "One"
 source = "community"
 
     [theme.templates]
-    builtin_ids = [ "foot", "gtk3", "gtk4", "ghostty", "kcolorscheme", "niri", "qt" ]
+    builtin_ids = [ "foot", "gtk3", "gtk4", "ghostty", "niri", "qt" ]
     community_ids = [ "fuzzel", "discord" ]
 
 [wallpaper]
@@ -198,6 +256,12 @@ title_scroll = "on_hover"
 capsule = true
 warning_threshold = 15
 
+[widget.bongocat]
+hot_reload = true
+script = "scripts/bongocat.lua"
+tappy_mode = true
+type = "scripted"
+
 [widget.brightness]
 capsule = true
 
@@ -206,13 +270,22 @@ format = "%I:%M %p | %a %b %d"
 
 [widget.cpu]
 capsule = true
-capsule_group = "Monitor"
 display = "text"
 label_min_width = 26.0
 
 [widget.input_volume]
 capsule = true
 capsule_group = "Other"
+
+[widget.network_rx]
+display = "graph"
+label_min_width = 20
+show_label = false
+
+[widget.network_tx]
+display = "graph"
+label_min_width = 20
+show_label = false
 
 [widget.notifications]
 capsule = true
@@ -223,6 +296,9 @@ capsule_group = "Monitor"
 display = "text"
 label_min_width = 27.0
 stat = "ram_pct"
+
+[widget.recorder]
+type = "noctalia/screen_recorder:recorder"
 
 [widget.session]
 capsule = true

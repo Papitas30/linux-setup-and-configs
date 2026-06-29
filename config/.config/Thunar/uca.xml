@@ -54,22 +54,6 @@
 </action>
 <action>
 	<icon></icon>
-	<name>symlinks</name>
-	<submenu></submenu>
-	<unique-id>1780437385273640-1</unique-id>
-	<command>for file in ~/.config/%n/*; do ln -s &quot;$file&quot; ~/linux-setup-and-configs/.config/%n/; done</command>
-	<description></description>
-	<range>*</range>
-	<patterns>*</patterns>
-	<directories/>
-	<audio-files/>
-	<image-files/>
-	<other-files/>
-	<text-files/>
-	<video-files/>
-</action>
-<action>
-	<icon></icon>
 	<name>Symlink to Git</name>
 	<submenu></submenu>
 	<unique-id>1780438064983946-1</unique-id>
