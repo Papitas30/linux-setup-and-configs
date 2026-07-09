@@ -1,3 +1,67 @@
+prefer-no-csd
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+window-rule {
+  geometry-corner-radius 0
+    clip-to-geometry true
+    draw-border-with-background false
+    background-effect {
+        blur true
+    }
+    min-width 480
+    max-width 1920
+    tiled-state true
+}
+
+gestures {
+    dnd-edge-view-scroll {
+       
+        delay-ms 0
+        max-speed 4000
+    }
+
+    dnd-edge-workspace-switch {
+        trigger-height 10
+        delay-ms 0
+    }
+     hot-corners {
+        off
+    }
+}
+
+overview {
+    zoom 0.45
+    workspace-shadow {
+    off
+    }
+}
+
+blur {
+
+    //off
+    passes 2
+    offset 1
+    noise 0
+    saturation 1.4
+}
+
+environment {
+  QT_QPA_PLATFORMTHEME "qt6ct"
+}
+
+debug {
+
+    honor-xdg-activation-with-invalid-serial 
+    deactivate-unfocused-windows
+ 
+}
+
+hotkey-overlay {
+    hide-not-bound
+    // skip-at-startup
+}
+
 recent-windows {
     // off
     debounce-ms 750
@@ -22,126 +86,121 @@ recent-windows {
         Alt+grave       { previous-window; }
     }
 }
+
 input {
 
-    keyboard {
-     
-       
-        numlock
-    }
+   warp-mouse-to-focus
+    focus-follows-mouse
+    disable-power-key-handling
+    workspace-auto-back-and-forth
+    mod-key "Super"
+
+  
 
     touchpad {
      
         tap
-   
-        natural-scroll
+   		drag true
+   		       drag-lock
+   		      // disabled-on-external-mouse
+   		      // left-handed
+   		 click-method "button-areas"
+   		 scroll-method "two-finger"
+   		  accel-speed 0.28
+   		  accel-profile "adaptive"
+   		 tap-button-map "left-right-middle"
+   	 scroll-factor 1.0
+   		 
     }
 
-    mouse 
-
-
-    trackpoint 
+     
+    mouse {
+        // natural-scroll
+        // left-handed
+        // middle-emulation
+        accel-speed 0.2
+        accel-profile "flat"
+        scroll-factor 1.0
+    }
+    
+    keyboard {
+        track-layout "global"
+        numlock
+        repeat-delay 250
+        repeat-rate 28
+    }
 }
 
 layout {
-
+    gaps 0
+    always-center-single-column
+    default-column-display "normal"
+    default-column-width { fixed 960; }
+    center-focused-column "never"
     background-color "transparent"
 
     preset-column-widths {
       proportion 0.25
- proportion 0.5
- proportion 0.75
+      proportion 0.5
+      proportion 0.75
     }
 
-     preset-window-heights {
+    preset-window-heights {
         proportion 0.5
         proportion 1.0
     }
+    
+    struts {
+        left 0
+        right 0
+        top 0
+        bottom 0
+    }
+
+    focus-ring {
+        on
+        width 2
+        active-color "#7fc8ff"
+        inactive-color "#505050"
+    }
+
+    border {
+        off
+        width 1
+        active-color "#7fc8ff"
+        inactive-color "#505050"
+    }
+
+    insert-hint {
+       // off
+        color "#ffc87f70"
+    }
+
    
+       tab-indicator {
+           hide-when-single-tab
+           place-within-column
+           corner-radius 0
+           width 4
+           length total-proportion=1.0
+           gap 4
+           gaps-between-tabs 2
+       }
+       
     shadow {
         // Uncomment the next line to enable shadows.
          on
       
 
-        softness 30
+        softness 50
+        
 
-        spread 5
-        offset x=0 y=5
+        spread 10
+        offset x=0 y=0
 
     }
 }
 
-
-screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
-
-
-
-window-rule {
-    min-width 480
-    max-width 1920
-    tiled-state true
-}
-gestures {
-    dnd-edge-view-scroll {
-       
-        delay-ms 0
-        max-speed 4000
-    }
-
-    dnd-edge-workspace-switch {
-        trigger-height 10
-        delay-ms 0
-    }
-}
-// Set the regular wallpaper on the backdrop.
-layer-rule {
-  match namespace="^noctalia-wallpaper*"
-  place-within-backdrop true
-}
-
-overview {
-  workspace-shadow {
-    off
-    }
-}
-environment {
-  QT_QPA_PLATFORMTHEME "qt6ct"
-}
-debug {
-    deactivate-unfocused-windows
-}
-// Enable blur behind the foot terminal.
-window-rule {
-    match app-id="^Sober$"
- open-fullscreen true
-
-    
-}
-
-window-rule {
-    match app-id="^foot$"
-
-    background-effect {
-        blur true
-    }
-}
-// Enable blur behind the fuzzel launcher.
-layer-rule {
-    match namespace="^launcher$"
-
-    background-effect {
-        blur true
-    }
-}
-// These are the default values:
-blur {
-
-    //off
-    passes 2
-    offset 1
-    noise 0
-    saturation 1.4
-}
 animations {
     workspace-switch {
         spring damping-ratio=0.9 stiffness=800 epsilon=0.0001
@@ -208,10 +267,8 @@ animations {
     }
 }
 
-include "basicsettings.kdl" // Added by niri-settings
-include "keybinds.kdl" // Added by niri-settings
+include "keybinds.kdl"
+include "rules.kdl"
 spawn-at-startup "noctalia"
-spawn-sh-at-startup "sleep 5 && easyeffects --service-mode -w"
-spawn-sh-at-startup "sleep 5 && discord --start-minimized"
-include "./noctalia.kdl"
-
+spawn-sh-at-startup "sleep 3 && easyeffects --service-mode -w"
+spawn-sh-at-startup "sleep 3 && vesktop -m"

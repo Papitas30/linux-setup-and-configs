@@ -1,0 +1,25 @@
+layer-rule {
+  match namespace="^noctalia-wallpaper*"
+  place-within-backdrop true
+}
+
+window-rule {
+    match app-id="^sober$"
+ open-fullscreen true    
+}
+
+window-rule {
+    match app-id="^foot$"
+
+    background-effect {
+        blur true
+    }
+}
+// Enable blur behind the fuzzel launcher.
+layer-rule {
+    match namespace="^launcher$"
+
+    background-effect {
+        blur true
+    }
+}
