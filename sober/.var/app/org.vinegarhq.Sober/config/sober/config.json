@@ -8,7 +8,7 @@
     "allow_gamepad_permission": false,
     "close_on_leave": false,
     "discord_rpc_enabled": true,
-    "discord_rpc_show_join_button": true,
+    "discord_rpc_show_join_button": false,
     "enable_gamemode": true,
     "enable_hidpi": true,
     "enable_mobile_home_screen": false,

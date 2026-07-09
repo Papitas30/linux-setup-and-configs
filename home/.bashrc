@@ -9,10 +9,12 @@ fi
 if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
     PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 fi
+export SYSTEMD_EDITOR=micro
+export EDITOR=micro
+export VISUAL=micro
 export PATH
-export JAVA_HOME="/usr/lib/jvm/java-25-openjdk-25"
 alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
-export PATH="$JAVA_HOME/bin:$PATH"
+export PATH="$PATH"
 alias sdi='sudo dnf install'
 alias sdu='sudo dnf update'
 alias sdr='sudo dnf remove'

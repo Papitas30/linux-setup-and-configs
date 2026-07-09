@@ -59,9 +59,9 @@ binds {
     Mod+Comma repeat=false hotkey-overlay-title="Open Settings" { spawn "noctalia" "msg" "settings-toggle"; }
     Mod+V repeat=false hotkey-overlay-title="Open Clipboard" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
     Mod+T repeat=false hotkey-overlay-title="Open Terminal" { spawn "foot"; }
-    Super+F1 repeat=false hotkey-overlay-title="Open LibreWolf" { spawn "/usr/share/librewolf/librewolf"; }
+    Super+F1 repeat=false hotkey-overlay-title="Open LibreWolf" { spawn "/usr/lib/librewolf/librewolf"; }
     Super+F2 repeat=false hotkey-overlay-title="Open Thunar" { spawn "thunar"; }
-    Mod+Tab repeat=false hotkey-overlay-title="Open Launcher" { spawn-sh "pkill fuzzel || fuzzel"; }
+    Mod+Tab repeat=false hotkey-overlay-title="Open Launcher" { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
     Mod+Ctrl+Z repeat=false hotkey-overlay-title="Open Emojis" { spawn-sh "qs -c noctalia-shell ipc call launcher emoji"; }
 
 

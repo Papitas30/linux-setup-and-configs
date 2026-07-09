@@ -2,11 +2,23 @@
 @import url(custom.css);
 
 
-
-#tabbrowser-tabs {
-  min-height: 0 !important;
+#main-window {
+ min-width:50px !important;
 }
+#tabbrowser-tabs {
+  min-height: 20px !important;
+  
+ }
+ 
+.titlebar-restore,
+.titlebar-min,
+.titlebar-max {
+    display: none !important;
+}
+ 
+:root { --chrome-block-radius: 0px !important; }
 
+#TabsToolbar { height: 25px !important; }
 /* Reduce left spacer on tab bar */
 
     .titlebar-spacer[type="pre-tabs"] {
