@@ -272,3 +272,5 @@ include "rules.kdl"
 spawn-at-startup "noctalia"
 spawn-sh-at-startup "sleep 3 && easyeffects --service-mode -w"
 spawn-sh-at-startup "sleep 3 && vesktop -m"
+
+include "noctalia.kdl"
