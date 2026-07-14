@@ -1,5 +1,8 @@
-alias sdi='sudo dnf install'
-alias sdu='sudo dnf update'
-alias sdr='sudo dnf remove'
+alias sudo='sudo '
+alias sps='sudo pacman -S'
+alias spr='sudo pacman -Rns'
+alias spu='sudo pacman -Syu'
+alias mountwin='sudo mount -t ntfs-3g /dev/nvme0n1p4 /mnt/win'
+alias unmountwin='sudo umount /mnt/win'
 alias nano='micro'
-
+alias listsize="pacman -Qi | awk '/^Name/{name=\$3} /^Installed Size/{print \$4\$5, name}' | LC_ALL=C.UTF-8 sort -h"

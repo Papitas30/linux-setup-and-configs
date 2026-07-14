@@ -5,7 +5,7 @@
 	<name>Open Terminal Here</name>
 	<submenu></submenu>
 	<unique-id>1775084237885140-1</unique-id>
-	<command>foot -D %d</command>
+	<command>foot -D %f</command>
 	<description></description>
 	<range></range>
 	<patterns>*</patterns>
@@ -14,10 +14,10 @@
 </action>
 <action>
 	<icon></icon>
-	<name>Open with nano</name>
+	<name>Open with micro</name>
 	<submenu></submenu>
 	<unique-id>1775860584084965-1</unique-id>
-	<command>foot sudo nano %f</command>
+	<command>foot sudo micro %f</command>
 	<description></description>
 	<range>1</range>
 	<patterns>*</patterns>
