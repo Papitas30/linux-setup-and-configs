@@ -2,6 +2,18 @@
 
 A collection of my Linux dotfiles, tweaks, and personal configurations.
 
+## Reviews
+Distributions I have tested: Q4OS, Garuda, Fedora 44, CachyOS  
+**Q4OS**: ★★★☆☆ - A Debian-based distro with a unique Windows installer that lets you install it from inside Windows!  
+**Garuda**: ★★★★☆ - An Arch-based distro that makes it easy to install Arch with good out of the box defaults.  
+**Fedora 44**: ★★★★★ - A "semi-rolling" distro that gives you the latest software and updates while maintaining reliable stability.  
+**CachyOS**: ★★★★★ - A performance and gaming focused Arch-based distro with aggresive optimizations and a user-friendly graphical installer. *CURRENT ONE I USE*
+
+Shells I have used: Bash, Zsh, Fish  
+**Bash**: ★★★★☆ - The default shell in most distros, its reliable but basic with no built in autocompletion.  
+**Zsh**: ★★★★☆ - Okay out of the box, plugins are needed for better autocompletion and syntax highlighting. More work to setup compared to Fish. *CURRENT ONE I USE*  
+**Fish**: ★★★★☆ - Amazing out of the box with built in auto completion, syntax highlighting and easy configuration, but its lack of POSIX compliance made me switch back to Zsh. (Bash commands and scripts won't work natively with Fish)
+
 ## 🚀 Getting Started
 
 I recommend using GNU Stow to manage the dotfiles since it makes creating and maintaining symlinks simple.
@@ -62,7 +74,7 @@ This symlinks app-specific config files into your `~/.config` directory.
 stow config
 ```
 
-You can remove the folder of applications you don't use before running stow to preventing it from symlinking unneeded configs.
+You can remove the folder of applications you don't use before running stow to prevent it from symlinking unneeded configs.
 
 ## Why I Made This
 
@@ -71,12 +83,4 @@ You can remove the folder of applications you don't use before running stow to p
 * Consistent configs across systems
 * A backup of all my personal tweaks
 
-
-<div align="center">
-
-**⭐ Star this repo if you find it helpful for managing your Linux configurations!**
-
-Made with ❤️ by Papitas30
-
-</div>
 
