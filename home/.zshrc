@@ -1,6 +1,8 @@
 export PATH="$HOME/.local/bin/:$PATH"
 export EDITOR="micro"
 alias sudo="sudo "
+alias nano="micro"
+alias ls="ls -A"
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # force zsh not to show completion menu, which allows fzf-tab to capture the unambiguous prefix
@@ -25,6 +27,10 @@ setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_ALL_DUPS
 setopt APPEND_HISTORY
 setopt SHARE_HISTORY
+setopt HIST_REDUCE_BLANKS
+setopt CORRECT
+setopt HASH_LIST_ALL
+setopt interactivecomments
 HYPHEN_INSENSITIVE="true"
 
 DEJA_HIGHLIGHT_STYLE='fg=110'

@@ -4,8 +4,16 @@ layer-rule {
 }
 
 window-rule {
-    match app-id="^sober$"
+ match app-id="^sober$"
  open-fullscreen true    
+}
+
+window-rule {
+    match is-window-cast-target=true
+
+    focus-ring {
+        active-gradient from="#f38ba8ee" to="#cc241dee" angle=45
+    }
 }
 
 window-rule {
@@ -23,3 +31,4 @@ layer-rule {
         blur true
     }
 }
+
