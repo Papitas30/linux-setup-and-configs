@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+<action>
+	<icon>utilities-terminal</icon>
+	<name>Open Terminal Here</name>
+	<submenu></submenu>
+	<unique-id>1775084237885140-1</unique-id>
+	<command>foot -D %f</command>
+	<description></description>
+	<range></range>
+	<patterns>*</patterns>
+	<startup-notify/>
+	<directories/>
+</action>
+<action>
+	<icon></icon>
+	<name>Open with micro</name>
+	<submenu></submenu>
+	<unique-id>1775860584084965-1</unique-id>
+	<command>foot sudo micro %f</command>
+	<description></description>
+	<range>1</range>
+	<patterns>*</patterns>
+	<startup-notify/>
+	<other-files/>
+	<text-files/>
+</action>
+<action>
+	<icon></icon>
+	<name>Open with root</name>
+	<submenu></submenu>
+	<unique-id>1777941892703710-1</unique-id>
+	<command>gedit admin://%f</command>
+	<description></description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+<action>
+	<icon></icon>
+	<name>Open admin directory</name>
+	<submenu></submenu>
+	<unique-id>1778715159877255-1</unique-id>
+	<command>thunar admin:///%f</command>
+	<description></description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+</action>
+<action>
+	<icon></icon>
+	<name>Symlink to Git</name>
+	<submenu></submenu>
+	<unique-id>1780438064983946-1</unique-id>
+	<command>bash -c &apos;mapfile -t files &lt; &lt;(echo &quot;%F&quot; | tr &quot; &quot; &quot;\n&quot;); for f in &quot;${files[@]}&quot;; do [ -z &quot;$f&quot; ] &amp;&amp; continue; rel_path=&quot;${f#$HOME/}&quot;; if [[ &quot;$rel_path&quot; == .config/* ]]; then default_name=$(echo &quot;$rel_path&quot; | cut -d/ -f2); else default_name=&quot;home&quot;; fi; pkg_name=$(zenity --entry --title=&quot;Stow Package - $(basename &quot;$f&quot;)&quot; --text=&quot;Enter package name for $(basename &quot;$f&quot;):&quot; --entry-text=&quot;$default_name&quot;); [ -z &quot;$pkg_name&quot; ] &amp;&amp; continue; mkdir -p ~/dots/&quot;$pkg_name&quot;/$(dirname &quot;$rel_path&quot;); mv &quot;$f&quot; ~/dots/&quot;$pkg_name&quot;/$(dirname &quot;$rel_path&quot;)/; cd ~/dots &amp;&amp; stow -v &quot;$pkg_name&quot;; done&apos;</command>
+	<description></description>
+	<range>*</range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>
+</actions>
