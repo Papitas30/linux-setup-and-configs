@@ -1,0 +1,146 @@
+# Umbriel starting configuration
+# Copy this file to ~/.config/umbriel/config.toml. Most changes apply when the
+# file is saved. Check edits with `umbriel config validate`.
+# Complete reference: https://docs.noctalia.dev/umbriel/
+
+# ==============================================================================
+# Includes
+# Optional split configuration
+# https://docs.noctalia.dev/umbriel/configuration/#include
+[include]
+files = [
+	"keybinds.toml",
+	"rules.toml",
+]
+
+# ==============================================================================
+# General
+# Optional session examples. XWayland support is enabled by default.
+# https://docs.noctalia.dev/umbriel/configuration/#general
+[general]
+autostart = ["noctalia"]
+focus_on_activate = true
+honor_restored_maximize = true
+
+# Environment variables
+[environment]
+MESA_VK_WSI_PRESENT_MODE="immediate"
+KWIN_DRM_NO_AMS="1"
+PROTON_USE_NTSYNC="1"
+PROTON_ENABLE_WAYLAND="1"
+SDL_VIDEODRIVER="wayland"
+# ==============================================================================
+# Screencast
+# https://docs.noctalia.dev/umbriel/configuration/#screencast
+[screencast]
+disable_dynamic_confirmation = true
+
+# ==============================================================================
+# Outputs
+# Outputs are machine-specific. Run `umbriel outputs` to find names and modes.
+# https://docs.noctalia.dev/umbriel/outputs/
+[output.eDP-1]
+direct_scanout = true
+vrr = "disabled"
+tearing = true
+hdr = "off"
+workspaces = 1
+
+# ==============================================================================
+# Appearance
+# Blur uses a smaller radius than the built-in default.
+# https://docs.noctalia.dev/umbriel/appearance/
+[appearance]
+prefer_no_csd = true
+border_width = 0
+outer_border_width = 0
+corner_radius = 0
+drag_opacity = 1
+opaque_fullscreen = false
+
+[appearance.blur]
+enabled = true
+optimized = false
+passes = 1
+radius = 5
+noise = 0
+brightness = 0.9
+contrast = 0.9
+saturation = 1.4
+
+[appearance.shadow]
+enabled = true
+softness = 50
+offset_x = 0
+offset_y = 0
+
+# ==============================================================================
+# Input
+# Enable NumLock when a physical keyboard connects.
+# https://docs.noctalia.dev/umbriel/input/
+[input]
+middle_click_paste = true
+client_window_drag = true
+window_drag_toggle = "none"
+
+[input.keyboard]
+repeat_rate = 28
+repeat_delay = 250
+numlock_toggle = true
+track_layout = "global"
+
+[input.touchpad]
+tap = true
+natural_scroll = false
+left_handed = false
+accel_profile = "adaptive"
+sensitivity = 0.28
+scroll_factor = 1
+disable_while_typing = false
+disable_on_external_mouse = false
+click_method = "button_areas"
+tap_button_map = "left_right_middle"
+
+[input.mouse]
+natural_scroll = false
+left_handed = false
+accel_profile = "flat"
+sensitivity = 0.2
+scroll_wheel_step = 60
+
+[input.cursor]
+hardware_cursor = true
+follows_focus = true
+hide_when_typing = false
+hide_timeout_ms = 0
+
+[input.focus]
+follows_mouse = true
+follows_mouse_max_scroll = 0.5
+
+
+# Overview
+[overview]
+zoom = 0.5
+scroll_factor_horizontal = 1.0
+background_blur = false
+workspace_wallpaper = false
+shortcuts = true
+shortcut_keys = "1234567890"
+
+# ==============================================================================
+# Layout
+# New scrolling-layout windows start at half the output width. Without this
+# setting, each application chooses its starting width. Stacked columns retain
+# their most recently focused row when focus leaves and later returns.
+# https://docs.noctalia.dev/umbriel/layout/
+[layout]
+mode = "scrolling"
+gap = 0
+extent_presets = [0.333, 0.5, 0.667]
+
+[layout.scrolling]
+default_extent_fraction = 0.5
+
+[hot_corners.top_left]
+enabled = false

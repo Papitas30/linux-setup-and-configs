@@ -1,8 +1,13 @@
 binds {
     
-    Mod+Shift+E hotkey-overlay-title="Cast focused window" {
+    Mod+Ctrl+E hotkey-overlay-title="Cast focused window" {
       spawn-sh "niri msg action set-dynamic-cast-window --id $(niri msg -j focused-window | jq .id)";
     }
+     
+    Mod+Shift+E hotkey-overlay-title="Cast focused window" {
+      spawn-sh "niri msg action set-dynamic-cast-monitor";
+    }
+    
     
     
     //Hotkey

@@ -1,5 +1,6 @@
 export PATH="$HOME/.local/bin/:$PATH"
 export EDITOR="micro"
+export ANV_DEBUG=video-decode,video-encode
 alias nano="micro"
 alias ls="ls -A"
 # set list-colors to enable filename colorizing

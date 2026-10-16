@@ -16,7 +16,7 @@
     "defaultInstallPath": "/home/diego/Games/Heroic",
     "libraryTopSection": "disabled",
     "defaultSteamPath": "/home/diego/.steam/steam",
-    "defaultWinePrefix": "/home/diego/Games/Heroic/Prefixes/default",
+    "defaultWinePrefix": "/home/diego/Games/Heroic/Prefix",
     "hideChangelogsOnStartup": true,
     "language": "en",
     "maxWorkers": 0,
@@ -25,9 +25,9 @@
     "enviromentOptions": [],
     "wrapperOptions": [],
     "showFps": false,
-    "useGameMode": false,
+    "useGameMode": true,
     "wineCrossoverBottle": "Heroic",
-    "winePrefix": "/home/diego/Games/Heroic/Prefixes/default",
+    "winePrefix": "/home/diego/Games/Heroic/Prefix",
     "wineVersion": {
       "bin": "/usr/share/steam/compatibilitytools.d/proton-cachyos-slr/proton",
       "name": "proton-cachyos-slr",
@@ -36,9 +36,9 @@
     "enableEsync": true,
     "enableFsync": true,
     "enableMsync": false,
-    "enableWineWayland": false,
+    "enableWineWayland": true,
     "enableHDR": false,
-    "enableWoW64": false,
+    "enableWoW64": true,
     "eacRuntime": false,
     "battlEyeRuntime": false,
     "framelessWindow": true,
@@ -56,7 +56,8 @@
       "enableHelp": false,
       "cometSupport": true,
       "zoomPlatform": false
-    }
+    },
+    "allowInstallationBrokenAnticheat": true
   },
   "version": "v0"
 }

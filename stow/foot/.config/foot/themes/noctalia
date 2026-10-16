@@ -1,6 +1,6 @@
 [colors-dark]
 foreground=cdd4e1
-background=1e2127
+background=000000
 regular0=1e2127
 regular1=e06c75
 regular2=98c379
@@ -19,4 +19,4 @@ bright6=6cd9e8
 bright7=ffffff
 selection-foreground=abb2bf
 selection-background=3e4451
-cursor=1e2127 51afef
+cursor=000000 51afef

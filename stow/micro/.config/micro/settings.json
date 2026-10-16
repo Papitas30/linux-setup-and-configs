@@ -1,14 +1,10 @@
 {
     "autosu": true,
-    "colorscheme": "simple",
+    "colorscheme": "noctalia",
     "hlsearch": true,
     "initlua": true,
     "keymenu": true,
     "mkparents": true,
-    "pluginchannels": [
-        "https://raw.githubusercontent.com/micro-editor/plugin-channel/master/channel.json"
-    ],
-    "pluginrepos": [],
     "saveundo": true,
     "scrollbar": true,
     "softwrap": true,

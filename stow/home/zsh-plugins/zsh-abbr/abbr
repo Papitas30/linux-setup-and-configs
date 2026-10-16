@@ -1,7 +1,7 @@
 abbr -g "rdeps"="\$(pactree -r -l %)"
 abbr "execs"="exec zsh"
 abbr "listsize"="pacman -Qi | awk '/^Name/{name=\$3} /^Installed Size/{print \$4\$5, name}' | LC_ALL=C.UTF-8 sort -h"
-abbr "mountwin"="sudo mount -t ntfs-3g /dev/nvme0n1p4 /mnt/win"
+abbr "mountwin"="sudo mount -t ntfs-3g /dev/nvme0n1p4 /mnt"
 abbr "nano"="micro"
 abbr "spr"="sudo pacman -Rns"
 abbr "sps"="sudo pacman -S"

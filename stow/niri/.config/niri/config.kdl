@@ -2,18 +2,6 @@ prefer-no-csd
 
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
-window-rule {
-  geometry-corner-radius 0
-    clip-to-geometry true
-    draw-border-with-background false
-    background-effect {
-        blur true
-    }
-    min-width 480
-    max-width 1920
-    tiled-state true
-}
-
 gestures {
     dnd-edge-view-scroll {
        
@@ -63,7 +51,7 @@ hotkey-overlay {
 }
 
 recent-windows {
-    // off
+    off
     debounce-ms 750
 
     open-delay-ms 120
@@ -217,6 +205,8 @@ include "keybinds.kdl"
 include "rules.kdl"
 spawn-at-startup "noctalia"
 spawn-sh-at-startup "sleep 3 && vesktop -m"
-include "noctalia.kdl"
 include "./cfg/animation.kdl"
 include "animations.kdl"
+
+
+include "noctalia.kdl"
