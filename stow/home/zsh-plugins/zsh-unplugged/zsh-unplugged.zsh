@@ -21,23 +21,15 @@
 ##? Clone a plugin using its github repo and (optionally) commit sha,
 ##? identify its init file, source it, and add it to your fpath.
 plugin-load () {
-  # Suppress the error message from 'git clone' stating that no template was found.
-  if [[ -z "${GIT_TEMPLATE_DIR}" ]] ; then
-    mkdir -p ${XDG_CONFIG_HOME:-$HOME/.config}/git/template
-    export GIT_TEMPLATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/git/template"
-  fi
-  local plugin repo plugdir initfile initfiles=() clone_args=()
+  local plugin repo plugdir initfile initfiles=()
   for plugin in $@; do
     repo="$plugin"
-    clone_args=(--quiet --depth 1 --recursive --shallow-submodules)
+    clone_args=(-q --depth 1 --recursive --shallow-submodules)
     plugdir=$ZPLUGINDIR/${repo:t}
     initfile=$plugdir/${repo:t}.plugin.zsh
     if [[ ! -d $plugdir ]]; then
       echo "Cloning $repo..."
-      # If you would like to use other Git hosting services, you should define them in your .zshrc before the plugins are loaded - for example, by using 'zsh_unplugged_githost=(github.com gitlab.com)'
-      local -a zsh_unplugged_githost=( "${(@)zsh_unplugged_githost:-github.com}" )
-      local githost
-      for githost in $zsh_unplugged_githost; do GIT_TERMINAL_PROMPT=0 git clone "${clone_args[@]}" https://$githost/$repo $plugdir 2>/dev/null; done
+	  git clone "${clone_args[@]}" https://github.com/$repo $plugdir
       plugin-update
     fi
     if [[ ! -e $initfile ]]; then
@@ -57,6 +49,7 @@ function plugin-update {
   done
   plugin-compile
 }
+
 function plugin-compile {
   autoload -U zrecompile
   for f in $ZPLUGINDIR/**/*.zsh{,-theme}(N); do
