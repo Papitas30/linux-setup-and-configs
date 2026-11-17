@@ -1,0 +1,35 @@
+# comments
+"comment" = "#a0a0a0"
+
+# strings
+"string" = "green"
+
+# parameters
+"variable.parameter" = "blue"
+
+# environment variables
+"variable.other" = "yellow"
+"punctuation.definition.variable" = "yellow"
+
+# keywords
+"keyword" = "blue"
+
+# variable assignments
+"storage" = "blue"
+
+# function names
+"entity.name.function" = "yellow"
+
+# braces
+"punctuation.section" = "yellow"
+
+# history expansions
+"meta.group.expansion.history" = "yellow"
+
+# reset command substitutions to terminal defaults
+"meta.group.expansion.command.parens" = {}
+
+# dynamic items
+"dynamic.callable" = {}
+"dynamic.callable.missing" = "red"
+"dynamic.path" = { underline = true }

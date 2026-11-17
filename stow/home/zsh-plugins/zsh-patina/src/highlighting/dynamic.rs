@@ -1,0 +1,846 @@
+use std::ops::Range;
+
+use anyhow::{Context, Result};
+use syntect::parsing::{ClearAmount, Scope, ScopeStackOp};
+
+use crate::{
+    config::AutocdStyle,
+    path::{PathType, is_path_executable, named_directory, path_type},
+    unescape::ZshUnescape,
+};
+
+use super::*;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DynamicScope {
+    Arguments,
+    Callable,
+    CharacterEscape,
+    CharacterEscapeQuotedAnsi,
+    StringQuotedBegin,
+    StringQuotedEnd,
+    StringQuotedSingle,
+    StringQuotedSingleAnsi,
+    StringQuotedDouble,
+    Tilde,
+    Redirection,
+    PoisonPill,
+}
+
+#[derive(Debug)]
+pub struct DynamicToken {
+    pub byte_range: Range<usize>,
+    pub scope: DynamicScope,
+}
+
+impl DynamicToken {
+    pub fn new(byte_range: Range<usize>, scope: DynamicScope) -> Self {
+        Self { byte_range, scope }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum DynamicType {
+    Unknown,
+    Callable,
+    Arguments,
+}
+
+pub struct DynamicHighlightingOptions<'a> {
+    cursor: Option<usize>,
+    pwd: &'a str,
+    cdpath: &'a [&'a str],
+    autocd: bool,
+    autocd_style: AutocdStyle,
+    home_dir: &'a str,
+    theme: &'a Theme,
+    highlight_partial_paths: bool,
+    // TODO: this should always be true starting from protocol v3, stop passing
+    // it around once v1 and v2 are decommissioned.
+    resolve_nameddirs: bool,
+}
+
+impl<'a> DynamicHighlightingOptions<'a> {
+    pub fn new(
+        cursor: Option<usize>,
+        pwd: &'a str,
+        cdpath: &'a [&'a str],
+        autocd: bool,
+        autocd_style: AutocdStyle,
+        home_dir: &'a str,
+        theme: &'a Theme,
+        highlight_partial_paths: bool,
+        resolve_nameddirs: bool,
+    ) -> Self {
+        Self {
+            cursor,
+            pwd,
+            cdpath,
+            autocd,
+            autocd_style,
+            home_dir,
+            theme,
+            highlight_partial_paths,
+            resolve_nameddirs,
+        }
+    }
+}
+
+/// A single string parsed from the input line by [`DynamicTokenGroup::parse`]
+#[derive(Debug)]
+struct ParsedToken {
+    /// The unescaped text content of the token
+    text: String,
+
+    /// The token's character range within the original line
+    range: Range<usize>,
+
+    /// The resolved named-directory name, if the token starts with a `~user`
+    /// reference
+    named_directory: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct DynamicTokenGroup {
+    pub dynamic_type: DynamicType,
+    pub tokens: Vec<DynamicToken>,
+    is_cd_like: bool,
+}
+
+impl DynamicTokenGroup {
+    pub fn highlight(&self, line: &str, options: &DynamicHighlightingOptions) -> Result<Vec<Span>> {
+        match self.dynamic_type {
+            DynamicType::Unknown => Ok(Vec::new()), // nothing to do
+            DynamicType::Callable => self.highlight_callable(line, options),
+            DynamicType::Arguments => self.highlight_arguments(line, options),
+        }
+    }
+
+    fn highlight_callable(
+        &self,
+        line: &str,
+        options: &DynamicHighlightingOptions,
+    ) -> Result<Vec<Span>> {
+        let mut result = Vec::new();
+
+        let parsed = self.parse(line, options.home_dir)?;
+        for token in parsed.into_iter().take(1) {
+            log::trace!("Dynamically highlighting callable: {}", token.text);
+            let span_style = if options.resolve_nameddirs
+                && let Some(name) = token.named_directory
+            {
+                Some(SpanStyle::Dynamic(DynamicStyle::Nameddir {
+                    name,
+                    parsed_path: token.text,
+                    dynamic_type: DynamicType::Callable,
+                    base_style: None,
+                }))
+            } else {
+                classify_callable(token.text, &token.range, options)
+            };
+
+            if let Some(span_style) = span_style {
+                result.push(Span {
+                    start: token.range.start,
+                    end: token.range.end,
+                    style: span_style,
+                });
+            }
+        }
+
+        Ok(result)
+    }
+
+    fn highlight_arguments(
+        &self,
+        line: &str,
+        options: &DynamicHighlightingOptions,
+    ) -> Result<Vec<Span>> {
+        let mut result = Vec::new();
+
+        let parsed = self.parse(line, options.home_dir)?;
+        for token in parsed {
+            log::trace!("Dynamically highlighting argument: {}", token.text);
+            let style = if options.resolve_nameddirs
+                && let Some(name) = token.named_directory
+            {
+                Some(SpanStyle::Dynamic(DynamicStyle::Nameddir {
+                    name,
+                    parsed_path: token.text,
+                    dynamic_type: DynamicType::Arguments,
+                    base_style: None,
+                }))
+            } else {
+                classify_argument(&token.text, &token.range, options, self.is_cd_like)
+            };
+
+            if let Some(style) = style {
+                result.push(Span {
+                    start: token.range.start,
+                    end: token.range.end,
+                    style,
+                });
+            }
+        }
+
+        Ok(result)
+    }
+
+    fn parse(&self, line: &str, home_dir: &str) -> Result<Vec<ParsedToken>> {
+        if self.tokens.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        struct State<'a> {
+            home_dir: &'a str,
+            s: String,
+            start: usize,
+            end: usize,
+            utf8_buf: Vec<u8>,
+            resolve_tilde: bool,
+            is_poison: bool,
+            result: Vec<ParsedToken>,
+        }
+
+        impl State<'_> {
+            fn flush_utf8(&mut self) -> Result<()> {
+                if !self.utf8_buf.is_empty() {
+                    let decoded = std::str::from_utf8(&self.utf8_buf).with_context(|| {
+                        format!("Invalid UTF-8 byte sequence: {:02x?}", self.utf8_buf)
+                    })?;
+                    self.s.push_str(decoded);
+                    self.utf8_buf.clear();
+                }
+                Ok(())
+            }
+
+            fn push_string(&mut self) -> Result<()> {
+                if !self.s.is_empty() && !self.is_poison {
+                    let nameddir = if !self.resolve_tilde {
+                        None
+                    } else if self.s == "~" || self.s.starts_with("~/") {
+                        // statically resolve a leading tilde as standalone path
+                        // segment to the user's home directory
+                        self.s.replace_range(0..1, self.home_dir);
+                        None
+                    } else {
+                        // other occurrences of leading tildes, such as in
+                        // '~foobar', presumably refer to named directories and
+                        // require dynamic resolution
+                        named_directory(&self.s).map(str::to_owned)
+                    };
+
+                    self.result.push(ParsedToken {
+                        text: std::mem::take(&mut self.s),
+                        range: self.start..self.end,
+                        named_directory: nameddir,
+                    });
+                } else {
+                    self.s = String::new();
+                }
+
+                self.is_poison = false;
+                self.resolve_tilde = false;
+
+                Ok(())
+            }
+        }
+
+        let chars_count = line[0..self.tokens[0].byte_range.start].chars().count();
+        let mut state = State {
+            home_dir,
+            s: String::new(),
+            start: chars_count,
+            end: chars_count,
+            utf8_buf: Vec::new(),
+            resolve_tilde: false,
+            is_poison: false,
+            result: Vec::new(),
+        };
+
+        for t in &self.tokens {
+            if t.scope != DynamicScope::CharacterEscapeQuotedAnsi && !state.utf8_buf.is_empty() {
+                state.flush_utf8()?;
+            }
+
+            match t.scope {
+                DynamicScope::Arguments => {
+                    let mut args = line[t.byte_range.clone()].chars().peekable();
+                    while args.peek().is_some() {
+                        if let Some(c) = args.peek()
+                            && c.is_whitespace()
+                        {
+                            state.push_string()?;
+
+                            // skip whitespace
+                            while let Some(c) = args.peek()
+                                && c.is_whitespace()
+                            {
+                                args.next().unwrap();
+                                state.end += 1;
+                            }
+
+                            state.start = state.end;
+                        }
+
+                        if args.peek().is_none() {
+                            break;
+                        }
+
+                        while let Some(c) = args.peek()
+                            && !c.is_whitespace()
+                        {
+                            state.s.push(args.next().unwrap());
+                            state.end += 1;
+                        }
+                    }
+                }
+
+                DynamicScope::Callable
+                | DynamicScope::StringQuotedSingle
+                | DynamicScope::StringQuotedSingleAnsi
+                | DynamicScope::StringQuotedDouble => {
+                    let c = &line[t.byte_range.clone()];
+                    let len = c.chars().count();
+                    state.s.push_str(c);
+                    state.end += len;
+                }
+
+                DynamicScope::CharacterEscape => {
+                    let c = &line[t.byte_range.clone()];
+                    let len = c.chars().count();
+                    state.s.push_str(&c[1..]); // trim leading '\'
+                    state.end += len;
+                }
+
+                DynamicScope::CharacterEscapeQuotedAnsi => {
+                    let c = &line[t.byte_range.clone()];
+                    let len = c.chars().count();
+                    if let Some(byte) = c.zsh_unescape_utf8_byte()? {
+                        state.utf8_buf.push(byte);
+                    } else {
+                        state.s.push(c.zsh_unescape_char()?);
+                    }
+                    state.end += len;
+                }
+
+                DynamicScope::StringQuotedBegin => {
+                    state.end += line[t.byte_range.clone()].chars().count();
+                }
+
+                DynamicScope::StringQuotedEnd => {
+                    state.end += 1;
+                }
+
+                DynamicScope::Tilde => {
+                    let c = &line[t.byte_range.clone()];
+
+                    // resolve tilde at the beginning of a string
+                    if state.start == state.end {
+                        state.resolve_tilde = true;
+                    }
+                    state.s.push_str(c);
+
+                    let len = c.chars().count();
+                    state.end += len;
+                }
+
+                DynamicScope::Redirection => {
+                    state.push_string()?;
+                    let c = &line[t.byte_range.clone()];
+                    let len = c.chars().count();
+                    state.end += len;
+                    state.start = state.end;
+                }
+
+                DynamicScope::PoisonPill => {
+                    // A poison pill means that either the current or the next
+                    // string contains a scope that prevents it from being
+                    // dynamically highlighted (e.g. an environment variable or
+                    // a command substitution).
+
+                    let c = &line[t.byte_range.clone()];
+                    let len = c.chars().count();
+                    if len > 0 && c.starts_with(|b: char| b.is_whitespace()) {
+                        // the poison pill starts with a whitespace, which means
+                        // we must keep the current string and throw away the
+                        // next one
+                        state.push_string()?;
+                        state.is_poison = true;
+                    } else if let Some(last) = state.s.chars().last()
+                        && last.is_whitespace()
+                    {
+                        // The poison pill does not start with a whitespace, but
+                        // the previous string does. Keep the current string but
+                        // trim that trailing whitespace. Throw away the next
+                        // string.
+                        state.s.pop();
+                        state.push_string()?;
+                        state.is_poison = true;
+                    } else {
+                        // The poison pill does not start with a whitespace,
+                        // which means it's part of the current string. Throw it
+                        // away and also throw away anything else until the next
+                        // whitespace.
+                        state.is_poison = true;
+                    }
+
+                    // skip poison pill contents
+                    state.end += len;
+                    state.start = state.end;
+                }
+            }
+        }
+
+        state.flush_utf8()?;
+        state.push_string()?;
+
+        Ok(state.result)
+    }
+}
+
+pub(super) fn classify_callable(
+    path: String,
+    range: &Range<usize>,
+    options: &DynamicHighlightingOptions,
+) -> Option<SpanStyle> {
+    if path == "." || (path.contains('/') && is_path_executable(&path, options.pwd)) {
+        log::trace!("Callable `{path}' is executable.");
+        return resolve_static_style(DYNAMIC_CALLABLE_COMMAND, options.theme)
+            .or_else(|| resolve_static_style(CALLABLE, options.theme))
+            .map(SpanStyle::Static);
+    }
+
+    let autocd_style = if options.autocd {
+        match classify_argument(&path, range, options, true) {
+            Some(SpanStyle::Static(style)) => Some(match options.autocd_style {
+                AutocdStyle::Command => {
+                    resolve_static_style(DYNAMIC_CALLABLE_COMMAND, options.theme)
+                        .or_else(|| resolve_static_style(CALLABLE, options.theme))
+                        .unwrap_or_default()
+                }
+                AutocdStyle::Directory => style,
+            }),
+            _ => None,
+        }
+    } else {
+        None
+    };
+
+    Some(SpanStyle::Dynamic(DynamicStyle::Callable {
+        parsed_callable: path,
+        autocd_style,
+    }))
+}
+
+pub(super) fn classify_argument(
+    path: &str,
+    range: &Range<usize>,
+    options: &DynamicHighlightingOptions,
+    is_cd_like: bool,
+) -> Option<SpanStyle> {
+    // explicit relative paths bypass cdpath, as they do in Zsh
+    let use_cdpath = is_cd_like && !path.starts_with("./") && !path.starts_with("../");
+
+    // Prefer working directory before falling back to cdpath entries. Note that
+    // Zsh allows you to put `.` into `cdpath` in which case, other directories
+    // can take precedence. However, since we only need to check for the
+    // presence of the directory in any (!) path to highlight it, without
+    // needing to identify the actual path, this is fine.
+    let search_dirs =
+        std::iter::once(options.pwd).chain(options.cdpath.iter().copied().filter(|_| use_cdpath));
+
+    // only perform highlighting of partial paths if it is enabled and if the
+    // cursor touches the prefix
+    let partial = options.highlight_partial_paths
+        && options
+            .cursor
+            .map(|cursor| (range.start..=range.end).contains(&cursor))
+            .unwrap_or_default();
+
+    let (path_type, matched_partially) = path_type(path, search_dirs, is_cd_like, partial)?;
+
+    log::trace!("Argument `{path}' is {path_type:?}.");
+    let dynamic_scope = match (path_type, matched_partially) {
+        (PathType::File, true) => DYNAMIC_PATH_FILE_PARTIAL,
+        (PathType::File, false) => DYNAMIC_PATH_FILE_COMPLETE,
+        (PathType::Directory, true) => DYNAMIC_PATH_DIRECTORY_PARTIAL,
+        (PathType::Directory, false) => DYNAMIC_PATH_DIRECTORY_COMPLETE,
+    };
+
+    // a matched path remains valid even when the theme adds no styling
+    Some(SpanStyle::Static(
+        resolve_static_style(dynamic_scope, options.theme).unwrap_or_default(),
+    ))
+}
+
+#[derive(Clone, Copy)]
+pub struct DynamicScopes {
+    arguments_scope: Scope,
+    callable_scope: Scope,
+    cdlike_scope: Scope,
+    character_escape_scope: Scope,
+    expansion_command_backticks: Scope,
+    expansion_command_parens: Scope,
+    string_quoted_begin_scope: Scope,
+    string_quoted_end_scope: Scope,
+    string_quoted_single_scope: Scope,
+    string_quoted_sigle_ansi_scope: Scope,
+    string_quoted_double_scope: Scope,
+    tilde_variable_scope: Scope,
+    tilde_meta_scope: Scope,
+    redirection_scope: Scope,
+}
+
+impl DynamicScopes {
+    pub fn new() -> Self {
+        let arguments_scope = Scope::new(ARGUMENTS).unwrap();
+        let callable_scope = Scope::new(CALLABLE).unwrap();
+        let cdlike_scope = Scope::new(CDLIKE).unwrap();
+        let character_escape_scope = Scope::new(CHARACTER_ESCAPE).unwrap();
+        let expansion_command_backticks = Scope::new(EXPANSION_COMMAND_BACKTICKS).unwrap();
+        let expansion_command_parens = Scope::new(EXPANSION_COMMAND_PARENS).unwrap();
+        let string_quoted_begin_scope = Scope::new(STRING_QUOTED_BEGIN).unwrap();
+        let string_quoted_end_scope = Scope::new(STRING_QUOTED_END).unwrap();
+        let string_quoted_single_scope = Scope::new(STRING_QUOTED_SINGLE).unwrap();
+        let string_quoted_sigle_ansi_scope = Scope::new(STRING_QUOTED_SINGLE_ANSI).unwrap();
+        let string_quoted_double_scope = Scope::new(STRING_QUOTED_DOUBLE).unwrap();
+        let tilde_variable_scope = Scope::new(TILDE_VARIABLE).unwrap();
+        let tilde_meta_scope = Scope::new(TILDE_META).unwrap();
+        let redirection_scope = Scope::new(REDIRECTION).unwrap();
+        Self {
+            arguments_scope,
+            callable_scope,
+            cdlike_scope,
+            character_escape_scope,
+            expansion_command_backticks,
+            expansion_command_parens,
+            string_quoted_begin_scope,
+            string_quoted_end_scope,
+            string_quoted_single_scope,
+            string_quoted_sigle_ansi_scope,
+            string_quoted_double_scope,
+            tilde_variable_scope,
+            tilde_meta_scope,
+            redirection_scope,
+        }
+    }
+}
+
+struct TemporaryGroup {
+    dynamic_type: DynamicType,
+    current_scope: Vec<DynamicScope>,
+    current_start: usize,
+    tokens: Vec<DynamicToken>,
+}
+
+pub struct DynamicTokenGroupBuilder {
+    scopes: DynamicScopes,
+    stack: Vec<Scope>,
+    stash: Vec<Vec<Scope>>,
+    group_stack: Vec<TemporaryGroup>,
+    group_stash: Vec<Vec<TemporaryGroup>>,
+    character_escape_buf: Vec<DynamicToken>,
+}
+
+impl DynamicTokenGroupBuilder {
+    pub fn new(scopes: DynamicScopes) -> Self {
+        Self {
+            scopes,
+            stack: Vec::new(),
+            stash: Vec::new(),
+            group_stack: Vec::new(),
+            group_stash: Vec::new(),
+            character_escape_buf: Vec::new(),
+        }
+    }
+
+    // Check if the command that is currently being parsed is cd-like (cd,
+    // chdir, pushd). The function traverses the stack from top to bottom and
+    // looks for a cdlike scope belonging to the current command.
+    fn is_cd_like(&self) -> bool {
+        for s in self.stack.iter().rev() {
+            if *s == self.scopes.expansion_command_backticks
+                || *s == self.scopes.expansion_command_parens
+            {
+                // We are inside a command expansion and haven't found a cdlike
+                // scope yet. Ignore anything below this item in the stack as it
+                // might belong to another command.
+                break;
+            }
+            if *s == self.scopes.cdlike_scope {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn on_pop(&mut self, i: usize, result: &mut Vec<DynamicTokenGroup>) {
+        let scope = self.stack.pop().unwrap();
+        if let Some(current_group) = self.group_stack.last_mut()
+            && (scope == self.scopes.arguments_scope
+                || scope == self.scopes.callable_scope
+                || scope == self.scopes.character_escape_scope
+                || scope == self.scopes.string_quoted_begin_scope
+                || scope == self.scopes.string_quoted_end_scope
+                || scope == self.scopes.string_quoted_single_scope
+                || scope == self.scopes.string_quoted_sigle_ansi_scope
+                || scope == self.scopes.string_quoted_double_scope
+                || scope == self.scopes.tilde_variable_scope
+                || scope == self.scopes.redirection_scope
+                || current_group.current_scope.last() == Some(&DynamicScope::PoisonPill))
+        {
+            if let Some(current_scope) = current_group.current_scope.pop()
+                && i != current_group.current_start
+            {
+                current_group.tokens.push(DynamicToken::new(
+                    current_group.current_start..i,
+                    current_scope,
+                ));
+            }
+            current_group.current_start = i;
+        } else if let Some(current_group) = self.group_stack.last_mut()
+            && scope == self.scopes.tilde_meta_scope
+        {
+            // result of pop can be ignored - tilde will be caught by
+            // `tilde_variable_scope`
+            current_group.current_scope.pop();
+            current_group.current_start = i;
+        } else if self.group_stack.is_empty()
+            && scope == self.scopes.character_escape_scope
+            && let Some(ce) = self.character_escape_buf.last_mut()
+        {
+            ce.byte_range.end = i;
+        }
+
+        if (scope == self.scopes.arguments_scope || scope == self.scopes.callable_scope)
+            && let Some(g) = self.group_stack.pop()
+            && !g.tokens.is_empty()
+        {
+            result.push(DynamicTokenGroup {
+                dynamic_type: g.dynamic_type,
+                tokens: g.tokens,
+                is_cd_like: self.is_cd_like(),
+            });
+        }
+    }
+
+    pub fn build(
+        &mut self,
+        ops: &[(usize, ScopeStackOp)],
+        offset: usize,
+    ) -> Vec<DynamicTokenGroup> {
+        let mut result = Vec::new();
+
+        for (i, s) in ops {
+            let i = i + offset;
+
+            match s {
+                ScopeStackOp::Push(scope) => {
+                    if *scope == self.scopes.arguments_scope {
+                        self.group_stack.push(TemporaryGroup {
+                            dynamic_type: DynamicType::Arguments,
+                            current_scope: vec![DynamicScope::Arguments],
+                            current_start: i,
+                            tokens: Vec::new(),
+                        });
+                    } else if *scope == self.scopes.callable_scope {
+                        if let Some(l) = self.character_escape_buf.last()
+                            && l.byte_range.end != i
+                        {
+                            self.character_escape_buf.clear();
+                        }
+                        self.group_stack.push(TemporaryGroup {
+                            dynamic_type: DynamicType::Callable,
+                            current_scope: vec![DynamicScope::Callable],
+                            current_start: i,
+                            tokens: std::mem::take(&mut self.character_escape_buf),
+                        });
+                    } else if self.group_stack.is_empty()
+                        && *scope == self.scopes.character_escape_scope
+                    {
+                        if let Some(l) = self.character_escape_buf.last()
+                            && l.byte_range.end != i
+                        {
+                            self.character_escape_buf.clear();
+                        }
+                        self.character_escape_buf
+                            .push(DynamicToken::new(i..i, DynamicScope::CharacterEscape));
+                    } else if let Some(current_group) = self.group_stack.last_mut() {
+                        let new_dynamic_scope = if *scope == self.scopes.character_escape_scope {
+                            if current_group
+                                .current_scope
+                                .contains(&DynamicScope::StringQuotedSingleAnsi)
+                            {
+                                DynamicScope::CharacterEscapeQuotedAnsi
+                            } else {
+                                DynamicScope::CharacterEscape
+                            }
+                        } else if *scope == self.scopes.string_quoted_begin_scope {
+                            DynamicScope::StringQuotedBegin
+                        } else if *scope == self.scopes.string_quoted_end_scope {
+                            DynamicScope::StringQuotedEnd
+                        } else if *scope == self.scopes.string_quoted_single_scope {
+                            DynamicScope::StringQuotedSingle
+                        } else if *scope == self.scopes.string_quoted_sigle_ansi_scope {
+                            DynamicScope::StringQuotedSingleAnsi
+                        } else if *scope == self.scopes.string_quoted_double_scope {
+                            DynamicScope::StringQuotedDouble
+                        } else if *scope == self.scopes.tilde_variable_scope
+                            || *scope == self.scopes.tilde_meta_scope
+                        {
+                            DynamicScope::Tilde
+                        } else if *scope == self.scopes.redirection_scope {
+                            DynamicScope::Redirection
+                        } else {
+                            // Unknown token found. We should not dynamically
+                            // highlight this group. Insert a poison pill so
+                            // [DynamicTokenGroup::parse()] will later skip it.
+                            DynamicScope::PoisonPill
+                        };
+
+                        if let Some(current_scope) = current_group.current_scope.last()
+                            && i != current_group.current_start
+                        {
+                            current_group.tokens.push(DynamicToken::new(
+                                current_group.current_start..i,
+                                *current_scope,
+                            ));
+                        }
+                        current_group.current_scope.push(new_dynamic_scope);
+                        current_group.current_start = i;
+                    }
+                    self.stack.push(*scope);
+                }
+
+                ScopeStackOp::Pop(count) => {
+                    for _ in 0..*count {
+                        self.on_pop(i, &mut result);
+                    }
+                }
+
+                ScopeStackOp::Clear(clear_amount) => {
+                    // similar to ::Pop, but store popped items in stash so
+                    // we can restore them if necessary
+                    let count = match *clear_amount {
+                        ClearAmount::TopN(n) => n.min(self.stack.len()),
+                        ClearAmount::All => self.stack.len(),
+                    };
+                    let mut to_stash = Vec::new();
+                    for _ in 0..count {
+                        to_stash.push(self.stack.pop().unwrap());
+                    }
+                    self.stash.push(to_stash);
+
+                    // stash only as many groups as there are `arguments_scope`
+                    // or `callable_scope` items in the scope stash
+                    let group_count = match *clear_amount {
+                        ClearAmount::TopN(_) => self
+                            .stash
+                            .last()
+                            .unwrap()
+                            .iter()
+                            .filter(|s| {
+                                **s == self.scopes.arguments_scope
+                                    || **s == self.scopes.callable_scope
+                            })
+                            .count(),
+                        ClearAmount::All => self.group_stack.len(),
+                    };
+                    let mut to_group_stash = Vec::new();
+                    for _ in 0..group_count {
+                        to_group_stash.push(self.group_stack.pop().unwrap());
+                    }
+                    self.group_stash.push(to_group_stash);
+                }
+
+                ScopeStackOp::Restore => {
+                    // restore items from the stash (see ::Clear)
+                    if let Some(mut s) = self.stash.pop() {
+                        while let Some(e) = s.pop() {
+                            self.stack.push(e);
+                        }
+                    }
+                    if let Some(mut s) = self.group_stash.pop() {
+                        while let Some(g) = s.pop() {
+                            self.group_stack.push(g);
+                        }
+                    }
+                }
+
+                ScopeStackOp::Noop => {}
+            }
+        }
+
+        result
+    }
+
+    pub fn finish(mut self, end: usize) -> Vec<DynamicTokenGroup> {
+        let mut result = Vec::new();
+
+        // consume the remaining items on the stack
+        while !self.stack.is_empty() {
+            self.on_pop(end, &mut result);
+        }
+
+        if !self.character_escape_buf.is_empty() {
+            result.push(DynamicTokenGroup {
+                dynamic_type: DynamicType::Unknown,
+                tokens: self.character_escape_buf,
+                is_cd_like: false,
+            });
+        }
+
+        result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use syntect::parsing::{ClearAmount, Scope, ScopeStackOp};
+
+    /// Tests that `Clear(TopN(1))` does not incorrectly stash an open group
+    /// when the cleared scope is not a group-creating scope
+    #[test]
+    fn clear_topn_does_not_stash_open_group() {
+        let scopes = DynamicScopes::new();
+        let args_scope = Scope::new("meta.function-call.arguments.shell").unwrap();
+        let tilde_scope = Scope::new("variable.language.tilde.shell").unwrap();
+        let heredoc_body_scope = Scope::new("string.unquoted.heredoc.shell").unwrap();
+
+        let mut builder = DynamicTokenGroupBuilder::new(scopes);
+
+        // Op sequence (byte offsets):
+        //  0  Push(args_scope)         -> arguments group opened
+        //  5  Push(heredoc_body_scope) -> PoisonPill pushed into the group
+        // 10  Clear(TopN(1))           -> heredoc_body_scope cleared (NOT a group creator)
+        // 10  Push(tilde_scope)        -> between Clear and Restore
+        // 15  Pop(1)                   -> pops tilde_scope
+        // 15  Restore                  -> heredoc_body_scope comes back
+        // 20  Pop(1)                   -> pops heredoc_body_scope (via on_pop)
+        // 25  Pop(1)                   -> pops args_scope -> group finalized
+        let groups = builder.build(
+            &[
+                (0, ScopeStackOp::Push(args_scope)),
+                (5, ScopeStackOp::Push(heredoc_body_scope)),
+                (10, ScopeStackOp::Clear(ClearAmount::TopN(1))),
+                (10, ScopeStackOp::Push(tilde_scope)),
+                (15, ScopeStackOp::Pop(1)),
+                (15, ScopeStackOp::Restore),
+                (20, ScopeStackOp::Pop(1)),
+                (25, ScopeStackOp::Pop(1)),
+            ],
+            0,
+        );
+
+        assert_eq!(groups.len(), 1);
+        let group = &groups[0];
+        assert_eq!(group.dynamic_type, DynamicType::Arguments);
+
+        // the tilde token at 10..15 must be present
+        let tilde = group.tokens.iter().find(|t| t.scope == DynamicScope::Tilde);
+        assert!(tilde.is_some());
+        assert_eq!(tilde.unwrap().byte_range, 10..15);
+    }
+}

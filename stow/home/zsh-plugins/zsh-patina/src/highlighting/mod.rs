@@ -1,0 +1,141 @@
+use std::ops::Range;
+
+mod dynamic;
+mod highlighter;
+mod historyexpansion;
+mod syntax;
+
+pub use highlighter::{CallableType, Highlighter, HighlighterBuilder, HighlightingRequest};
+
+use crate::{highlighting::dynamic::DynamicType, theme::Theme};
+
+const ARGUMENTS: &str = "meta.function-call.arguments.shell";
+const DYNAMIC_PATH_DIRECTORY_COMPLETE: &str = "dynamic.path.directory.complete.shell";
+const DYNAMIC_PATH_DIRECTORY_PARTIAL: &str = "dynamic.path.directory.partial.shell";
+const DYNAMIC_PATH_FILE_COMPLETE: &str = "dynamic.path.file.complete.shell";
+const DYNAMIC_PATH_FILE_PARTIAL: &str = "dynamic.path.file.partial.shell";
+
+const CALLABLE: &str = "variable.function.shell";
+const DYNAMIC_CALLABLE_ALIAS: &str = "dynamic.callable.alias.shell";
+const DYNAMIC_CALLABLE_BUILTIN: &str = "dynamic.callable.builtin.shell";
+const DYNAMIC_CALLABLE_COMMAND: &str = "dynamic.callable.command.shell";
+const DYNAMIC_CALLABLE_FUNCTION: &str = "dynamic.callable.function.shell";
+const DYNAMIC_CALLABLE_MISSING: &str = "dynamic.callable.missing.shell";
+
+const CDLIKE: &str = "meta.group.cdlike.shell";
+const FUNCTION_CALL: &str = "meta.function-call.shell";
+
+const EXPANSION_COMMAND_BACKTICKS: &str = "meta.group.expansion.command.backticks.shell";
+const EXPANSION_COMMAND_PARENS: &str = "meta.group.expansion.command.parens.shell";
+const EXPANSION_HISTORY: &str = "meta.group.expansion.history.shell";
+
+const CHARACTER_ESCAPE: &str = "constant.character.escape.shell";
+const PARAMETER_OPTION: &str = "variable.parameter.option.shell";
+const PUNCTUATION_PARAMETER: &str = "punctuation.definition.parameter.shell";
+const REDIRECTION: &str = "keyword.operator.assignment.redirection.shell";
+const STRING_QUOTED_SINGLE: &str = "string.quoted.single.shell";
+const STRING_QUOTED_SINGLE_ANSI: &str = "string.quoted.single.ansi-c.shell";
+const STRING_QUOTED_DOUBLE: &str = "string.quoted.double.shell";
+const STRING_QUOTED_BEGIN: &str = "punctuation.definition.string.begin.shell";
+const STRING_QUOTED_END: &str = "punctuation.definition.string.end.shell";
+const STRING_UNQUOTED_HEREDOC: &str = "string.unquoted.heredoc.shell";
+const TILDE_VARIABLE: &str = "variable.language.tilde.shell";
+const TILDE_META: &str = "meta.group.expansion.tilde";
+
+/// A span of text with a foreground color. The range is specified in terms of
+/// character indices, not byte indices.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Span {
+    /// The starting character index of the span (inclusive)
+    pub start: usize,
+
+    /// The ending character index of the span (exclusive)
+    pub end: usize,
+
+    /// The span's style
+    pub style: SpanStyle,
+}
+
+#[derive(Clone, Default, PartialEq, Eq, Hash, Debug)]
+pub struct StaticStyle {
+    /// The foreground color of the span
+    pub foreground_color: Option<String>,
+
+    /// The background color of the span
+    pub background_color: Option<String>,
+
+    /// `true` if the text should be shown in bold
+    pub bold: bool,
+
+    /// `true` if the text should be shown underlined
+    pub underline: bool,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum DynamicStyle {
+    /// A callable whose type must be resolved by the client
+    Callable {
+        /// The parsed callable name
+        parsed_callable: String,
+
+        /// Directory styling to use only if command lookup finds no callable
+        autocd_style: Option<StaticStyle>,
+    },
+
+    /// A path containing a named directory that must be resolved by the client
+    Nameddir {
+        /// The named-directory name, without the leading tilde
+        name: String,
+
+        /// The complete parsed path containing the named directory
+        parsed_path: String,
+
+        /// Whether the path belongs to a callable or an argument expression
+        dynamic_type: DynamicType,
+
+        /// The static grammar style to combine with the resolved path style
+        base_style: Option<StaticStyle>,
+    },
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum SpanStyle {
+    Static(StaticStyle),
+    Dynamic(DynamicStyle),
+}
+
+/// A token with a scope, line and column number, and range in the input command
+/// (byte indices). The line and column numbers are 1-based.
+pub struct Token {
+    /// The scope of the token (e.g. `keyword.control.for.shell`)
+    pub scope: String,
+
+    /// The line number of the token (1-based)
+    pub line: usize,
+
+    /// The column of the token (1-based)
+    pub column: usize,
+
+    /// The range of the token in the input command (byte indices)
+    pub range: Range<usize>,
+}
+
+/// Lookup a scope in a theme and convert the retrieved style to a
+/// [`StaticStyle`] struct
+fn resolve_static_style(scope: &str, theme: &Theme) -> Option<StaticStyle> {
+    let style = theme.resolve(scope)?;
+
+    let fg = style.foreground.map(|c| c.to_ansi_color());
+    let bg = style.background.map(|c| c.to_ansi_color());
+
+    if fg.is_none() && bg.is_none() && !style.bold && !style.underline {
+        None
+    } else {
+        Some(StaticStyle {
+            foreground_color: fg,
+            background_color: bg,
+            bold: style.bold,
+            underline: style.underline,
+        })
+    }
+}
